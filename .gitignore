@@ -1,0 +1,41 @@
+### Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+### Env
+.env
+.env.*
+.env.local
+
+### OS
+.DS_Store
+
+### Editor
+.vscode/
+.idea/
+
+### Build / Output
+dist/
+build/
+coverage/
+.nyc_output/
+
+### Playwright artifacts
+playwright-report/
+test-results/
+traces/
+videos/
+screenshots/
+.cache/
+
+### Data / runtime outputs
+data/*.csv
+logs/
+*.log
+
+### Misc
+.history/
+*.local
