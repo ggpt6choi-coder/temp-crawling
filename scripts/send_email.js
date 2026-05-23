@@ -57,22 +57,23 @@ function findNewest(files, regex) {
   }
   console.log('Attachments to send:', attachments.map(a => a.filename).join(', '));
 
-  const host = process.env.SMTP_HOST;
+  // sensible defaults so only user/pass need to be provided in .env
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  const secure = (process.env.SMTP_SECURE === 'true');
-  const to = process.env.EMAIL_TO;
+  const secure = (process.env.SMTP_SECURE === 'true') || false;
+  const to = process.env.EMAIL_TO || user;
   const from = process.env.EMAIL_FROM || user;
 
-  if (!host || !user || !pass || !to) {
-    console.error('Missing SMTP config. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and EMAIL_TO environment variables.');
+  if (!user || !pass) {
+    console.error('Missing SMTP credentials. Set SMTP_USER and SMTP_PASS in your environment.');
     process.exit(1);
   }
 
   // show masked SMTP config for debugging
   const mask = s => (typeof s === 'string' && s.length) ? (s.slice(0,2) + '***' + s.slice(-1)) : '';
-  console.log('SMTP config:', { host, port, secure, user: mask(user), to });
+  console.log('SMTP config (using defaults where unset):', { host, port, secure, user: mask(user), to });
 
   const transporter = nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
 

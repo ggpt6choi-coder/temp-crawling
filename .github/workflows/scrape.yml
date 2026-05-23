@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      SMTP_HOST: ${{ secrets.SMTP_HOST }}
-      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      # Only provide credentials as repository secrets; other settings default in code.
       SMTP_USER: ${{ secrets.SMTP_USER }}
       SMTP_PASS: ${{ secrets.SMTP_PASS }}
-      SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+      # Optional: set EMAIL_TO / EMAIL_FROM as secrets if you want to override defaults
       EMAIL_TO: ${{ secrets.EMAIL_TO }}
       EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      TZ: Asia/Seoul
     steps:
       - name: Checkout
         uses: actions/checkout@v4
