@@ -63,8 +63,11 @@ function findNewest(files, regex) {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   const secure = (process.env.SMTP_SECURE === 'true') || false;
-  const to = process.env.EMAIL_TO || user;
+  const toRaw = process.env.EMAIL_TO || user;
   const from = process.env.EMAIL_FROM || user;
+  // support comma-separated multiple recipients
+  const toList = (typeof toRaw === 'string') ? toRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const to = toList.join(', ');
 
   if (!user || !pass) {
     console.error('Missing SMTP credentials. Set SMTP_USER and SMTP_PASS in your environment.');
@@ -73,7 +76,11 @@ function findNewest(files, regex) {
 
   // show masked SMTP config for debugging
   const mask = s => (typeof s === 'string' && s.length) ? (s.slice(0,2) + '***' + s.slice(-1)) : '';
-  console.log('SMTP config (using defaults where unset):', { host, port, secure, user: mask(user), to });
+  console.log('SMTP config (using defaults where unset):', { host, port, secure, user: mask(user), from: mask(from), to });
+
+  if (from !== user) {
+    console.warn('Warning: EMAIL_FROM differs from SMTP_USER; some SMTP providers require the FROM address to match the authenticated user or be authorized as an alias.');
+  }
 
   const transporter = nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
 

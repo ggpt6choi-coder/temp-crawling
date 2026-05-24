@@ -16,10 +16,20 @@ const base = 'https://www.ppomppu.co.kr/search_bbs.php?search_type=sub_memo&page
   });
 
   const rows = [];
+  // compute KST yesterday date string (YYYY.MM.DD)
+  const kstNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  const kstYesterday = new Date(kstNow);
+  kstYesterday.setDate(kstNow.getDate() - 1);
+  const fmtKst = d => d.toISOString().slice(0,10).replace(/-/g,'.');
+  const targetDate = fmtKst(kstYesterday);
+  console.log('Filtering results for KST date:', targetDate);
+  const maxPages = parseInt(process.env.PAGES || '5', 10);
+  console.log('Max pages to scan:', maxPages);
   for (const kw of keywords) {
     console.log(`Starting keyword: ${kw}`);
     const aggregated = [];
-    for (let pageNo = 1; pageNo <= 2; pageNo++) {
+    let stopPaging = false;
+    for (let pageNo = 1; pageNo <= maxPages; pageNo++) {
       const url = `${base}${pageNo}&keyword=${encodeURIComponent(kw)}&page_size=50&bbs_id=&order_type=date&bbs_cate=2`;
       const page = await context.newPage();
       page.setDefaultNavigationTimeout(30000);
@@ -73,6 +83,18 @@ const base = 'https://www.ppomppu.co.kr/search_bbs.php?search_type=sub_memo&page
         });
 
         aggregated.push(...items);
+        // if any item is older than targetDate, stop scanning further pages
+        const olderFound = items.some(it => {
+          if (!it || !it.date) return false;
+          const s = (it.date || '').trim();
+          const m = s.match(/\d{4}\.\d{2}\.\d{2}/);
+          if (!m) return false;
+          return m[0] < targetDate;
+        });
+        if (olderFound) {
+          console.log(`Found older-than-target date on page ${pageNo}, stopping further pages.`);
+          stopPaging = true;
+        }
         console.log(`Page ${pageNo} for ${kw}: collected ${items.length} items`);
       } catch (err) {
         console.error('Failed to open', url, '-', err.message || err);
@@ -81,10 +103,19 @@ const base = 'https://www.ppomppu.co.kr/search_bbs.php?search_type=sub_memo&page
       }
 
       await new Promise(r => setTimeout(r, 500));
+      if (stopPaging) break;
     }
 
-    if (aggregated.length) {
-      for (const it of aggregated) {
+    // keep only items that match KST yesterday (expecting YYYY.MM.DD in `date`)
+    const matched = (aggregated || []).filter(it => {
+      if (!it || !it.date) return false;
+      const s = (it.date || '').trim();
+      if (s.includes('어제')) return true;
+      const m = s.match(/\d{4}\.\d{2}\.\d{2}/);
+      return m && m[0] === targetDate;
+    });
+    if (matched.length) {
+      for (const it of matched) {
         rows.push({ keyword: kw, date: it.date || '', title: it.title || '', views: (it.views||'').toString().replace(/,/g,''), link: it.link || '' });
       }
     } else {
