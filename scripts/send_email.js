@@ -32,6 +32,8 @@ function findNewest(files, regex) {
   const patterns = [
     /^ppomppu-.*\.csv$/,
     /^naver-.*\.csv$/,
+    /^ruliweb-.*\.csv$/,
+    /^fmkorea-.*\.csv$/,
     /^combined-네이버-.*\.csv$/,
     /^combined-뽐뿌-.*\.csv$/
   ];
@@ -92,7 +94,7 @@ function findNewest(files, regex) {
     process.exit(1);
   }
 
-  const subject = process.env.EMAIL_SUBJECT || `Scrapers CSV ${new Date().toISOString().slice(0,10)}`;
+  const subject = process.env.EMAIL_SUBJECT || `크롤링 결과 CSV ${new Date().toISOString().slice(0,10)}`;
   const text = process.env.EMAIL_TEXT || 'Attached are the latest CSV results from the scrapers.';
 
   try {

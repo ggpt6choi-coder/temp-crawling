@@ -6,8 +6,10 @@
   "scripts": {
     "ppomppu": "node scripts/ppomppu.js",
     "naver": "node scripts/naver.js",
+    "ruliweb": "node scripts/ruliweb.js",
+    "fmkorea": "node scripts/fmkorea.js",
     "aggregate": "node scripts/aggregate.js",
-    "start": "npm run ppomppu && npm run naver && npm run email",
+    "start": "npm run ppomppu && npm run naver && npm run ruliweb && npm run fmkorea && npm run email",
     "email": "node scripts/send_email.js"
   },
   "dependencies": {
