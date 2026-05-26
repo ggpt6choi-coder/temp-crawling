@@ -3,7 +3,7 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const keywords = ['로보락','드리미','모바','나르왈','에코백스','삼성'];
+const keywords = require('../keywords.json');
 // Naver Cafe search URL template (cafe id matches example). Adjust CAFE_ID as needed.
 const CAFE_ID = process.env.CAFE_ID || '11262350';
 const base = `https://cafe.naver.com/f-e/cafes/${CAFE_ID}/menus/0?viewType=L&ta=SUBJECT`;
@@ -22,11 +22,15 @@ const base = `https://cafe.naver.com/f-e/cafes/${CAFE_ID}/menus/0?viewType=L&ta=
   const rows = [];
   console.log('Browser launched (naver). Running in headless if configured.');
   // compute KST yesterday date string (YYYY.MM.DD)
-  const kstNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
-  const kstYesterday = new Date(kstNow);
-  kstYesterday.setDate(kstNow.getDate() - 1);
-  const fmtKst = d => d.toISOString().slice(0,10).replace(/-/g,'.');
-  const targetDate = fmtKst(kstYesterday);
+  const getKstDateString = (date, offsetDays = 0, delimiter = '.') => {
+    const kst = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+    kst.setDate(kst.getDate() + offsetDays);
+    const yyyy = kst.getFullYear();
+    const mm = String(kst.getMonth() + 1).padStart(2, '0');
+    const dd = String(kst.getDate()).padStart(2, '0');
+    return `${yyyy}${delimiter}${mm}${delimiter}${dd}`;
+  };
+  const targetDate = getKstDateString(new Date(), -1);
   console.log('Filtering results for KST date:', targetDate);
   const maxPages = parseInt(process.env.PAGES || '5', 10);
   console.log('Max pages to scan:', maxPages);
@@ -36,12 +40,8 @@ const base = `https://cafe.naver.com/f-e/cafes/${CAFE_ID}/menus/0?viewType=L&ta=
     let stopPaging = false;
     for (let pageNo = 1; pageNo <= maxPages; pageNo++) {
       // Naver Cafe uses `page` parameter and supports q (query) and size
-      const toDate = new Date();
-      const fromDate = new Date(toDate);
-      fromDate.setDate(fromDate.getDate() - 30); // last 30 days by default
-      const fmt = d => d.toISOString().slice(0,10).replace(/-/g,'');
-      const from = process.env.FROM || fmt(fromDate);
-      const to = process.env.TO || fmt(toDate);
+      const from = process.env.FROM || getKstDateString(new Date(), -2, '');
+      const to = process.env.TO || getKstDateString(new Date(), 0, '');
       const size = process.env.SIZE || '50';
       const url = `${base}&page=${pageNo}&q=${encodeURIComponent(kw)}&from=${from}&to=${to}&size=${size}`;
       const page = await context.newPage();
@@ -139,8 +139,7 @@ const base = `https://cafe.naver.com/f-e/cafes/${CAFE_ID}/menus/0?viewType=L&ta=
   }
 
   // write single CSV for 네이버
-  const now = new Date();
-  const dateStr = now.toISOString().slice(0,10).replace(/-/g, '.');
+  const dateStr = getKstDateString(new Date(), 0);
   const outDir = path.resolve(process.cwd(), 'data');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
   const csvHeader = ['구분','키워드','날짜','제목','조회수','링크'];

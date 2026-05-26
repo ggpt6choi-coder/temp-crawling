@@ -15,7 +15,7 @@ if (!files.length) {
 }
 
 // Keywords of interest (same as scrapers)
-const keywords = ['로보락','드리미','모바','나르왈','에코백스','삼성'];
+const keywords = require('../keywords.json');
 const codeMap = { naver: '네이버', ppomppu: '뽐뿌' };
 
 function escapeCsvCell(s) {
@@ -38,7 +38,8 @@ for (const f of files) {
   index[code][kw] = path.join(dataDir, f);
 }
 
-const today = new Date().toISOString().slice(0,10).replace(/-/g,'.');
+const kst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+const today = `${kst.getFullYear()}.${String(kst.getMonth() + 1).padStart(2, '0')}.${String(kst.getDate()).padStart(2, '0')}`;
 
 let totalFiles = 0;
 let totalRows = 0;

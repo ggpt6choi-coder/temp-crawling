@@ -94,7 +94,9 @@ function findNewest(files, regex) {
     process.exit(1);
   }
 
-  const subject = process.env.EMAIL_SUBJECT || `크롤링 결과 CSV ${new Date().toISOString().slice(0,10)}`;
+  const kst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  const today = `${kst.getFullYear()}-${String(kst.getMonth() + 1).padStart(2, '0')}-${String(kst.getDate()).padStart(2, '0')}`;
+  const subject = process.env.EMAIL_SUBJECT || `크롤링 결과 CSV ${today}`;
   const text = process.env.EMAIL_TEXT || 'Attached are the latest CSV results from the scrapers.';
 
   try {

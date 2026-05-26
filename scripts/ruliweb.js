@@ -3,7 +3,7 @@ const path = require('path');
 const { chromium } = require('playwright');
 require('dotenv').config({ path: '.env.local' });
 
-const keywords = ['로보락','드리미','모바','나르왈','에코백스','삼성'];
+const keywords = require('../keywords.json');
 const maxPages = parseInt(process.env.PAGES || '5', 10);
 
 function ensureDir(dir) {
