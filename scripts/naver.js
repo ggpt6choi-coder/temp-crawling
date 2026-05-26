@@ -8,7 +8,16 @@ const keywords = require('../keywords.json');
 const CAFE_ID = process.env.CAFE_ID || '11262350';
 const base = `https://cafe.naver.com/f-e/cafes/${CAFE_ID}/menus/0?viewType=L&ta=SUBJECT`;
 
-(async () => {
+const getKstDateString = (date, offsetDays = 0, delimiter = '.') => {
+  const kst = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  kst.setDate(kst.getDate() + offsetDays);
+  const yyyy = kst.getFullYear();
+  const mm = String(kst.getMonth() + 1).padStart(2, '0');
+  const dd = String(kst.getDate()).padStart(2, '0');
+  return `${yyyy}${delimiter}${mm}${delimiter}${dd}`;
+};
+
+async function scrape() {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
@@ -22,14 +31,6 @@ const base = `https://cafe.naver.com/f-e/cafes/${CAFE_ID}/menus/0?viewType=L&ta=
   const rows = [];
   console.log('Browser launched (naver). Running in headless if configured.');
   // compute KST yesterday date string (YYYY.MM.DD)
-  const getKstDateString = (date, offsetDays = 0, delimiter = '.') => {
-    const kst = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
-    kst.setDate(kst.getDate() + offsetDays);
-    const yyyy = kst.getFullYear();
-    const mm = String(kst.getMonth() + 1).padStart(2, '0');
-    const dd = String(kst.getDate()).padStart(2, '0');
-    return `${yyyy}${delimiter}${mm}${delimiter}${dd}`;
-  };
   const targetDate = getKstDateString(new Date(), -1);
   console.log('Filtering results for KST date:', targetDate);
   const maxPages = parseInt(process.env.PAGES || '5', 10);
@@ -138,6 +139,24 @@ const base = `https://cafe.naver.com/f-e/cafes/${CAFE_ID}/menus/0?viewType=L&ta=
     console.log(`Finished keyword: ${kw}. Total rows so far: ${rows.length}`);
   }
 
+  await browser.close();
+  console.log('Browser closed. All done.');
+  
+  // To keep consistent with previous formatting, we map rows to unified format
+  const unifiedRows = rows.map(r => ({
+    source: '네이버',
+    keyword: r.keyword,
+    date: r.date,
+    title: r.title,
+    views: r.views,
+    link: r.link
+  }));
+  return unifiedRows;
+}
+
+async function main() {
+  const rows = await scrape();
+  
   // write single CSV for 네이버
   const dateStr = getKstDateString(new Date(), 0);
   const outDir = path.resolve(process.cwd(), 'data');
@@ -146,7 +165,7 @@ const base = `https://cafe.naver.com/f-e/cafes/${CAFE_ID}/menus/0?viewType=L&ta=
   const csvLines = [csvHeader.join(',')];
   for (const r of rows) {
     const vals = [
-      '네이버',
+      r.source,
       r.keyword,
       r.date,
       r.title.replace(/"/g,'""'),
@@ -161,11 +180,13 @@ const base = `https://cafe.naver.com/f-e/cafes/${CAFE_ID}/menus/0?viewType=L&ta=
   const outPath = path.join(outDir, `naver-${dateStr}.csv`);
   fs.writeFileSync(outPath, csvLines.join('\n'), 'utf8');
   console.log('Saved', outPath, '-', rows.length, 'rows');
-  
+}
 
-  await browser.close();
-  console.log('Browser closed. All done.');
-})().catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(err => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+module.exports = { scrape };

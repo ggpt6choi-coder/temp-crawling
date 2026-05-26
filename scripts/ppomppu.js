@@ -6,7 +6,16 @@ const path = require('path');
 const keywords = require('../keywords.json');
 const base = 'https://www.ppomppu.co.kr/search_bbs.php?search_type=sub_memo&page_no=';
 
-(async () => {
+const getKstDateString = (date, offsetDays = 0) => {
+  const kst = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  kst.setDate(kst.getDate() + offsetDays);
+  const yyyy = kst.getFullYear();
+  const mm = String(kst.getMonth() + 1).padStart(2, '0');
+  const dd = String(kst.getDate()).padStart(2, '0');
+  return `${yyyy}.${mm}.${dd}`;
+};
+
+async function scrape() {
   const browser = await chromium.launch({ headless: true });
   console.log('Browser launched (ppomppu). Running headless:', true);
   const context = await browser.newContext({
@@ -17,14 +26,6 @@ const base = 'https://www.ppomppu.co.kr/search_bbs.php?search_type=sub_memo&page
 
   const rows = [];
   // compute KST yesterday date string (YYYY.MM.DD)
-  const getKstDateString = (date, offsetDays = 0) => {
-    const kst = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
-    kst.setDate(kst.getDate() + offsetDays);
-    const yyyy = kst.getFullYear();
-    const mm = String(kst.getMonth() + 1).padStart(2, '0');
-    const dd = String(kst.getDate()).padStart(2, '0');
-    return `${yyyy}.${mm}.${dd}`;
-  };
   const targetDate = getKstDateString(new Date(), -1);
   console.log('Filtering results for KST date:', targetDate);
   const maxPages = parseInt(process.env.PAGES || '5', 10);
@@ -128,6 +129,23 @@ const base = 'https://www.ppomppu.co.kr/search_bbs.php?search_type=sub_memo&page
     console.log(`Finished keyword: ${kw}. Total rows so far: ${rows.length}`);
   }
 
+  await browser.close();
+  console.log('Browser closed. All done.');
+  
+  const unifiedRows = rows.map(r => ({
+    source: '뽐뿌',
+    keyword: r.keyword,
+    date: r.date,
+    title: r.title,
+    views: r.views,
+    link: r.link
+  }));
+  return unifiedRows;
+}
+
+async function main() {
+  const rows = await scrape();
+
   // write single CSV for 뽐뿌
   const dateStr = getKstDateString(new Date(), 0);
   const outDir = path.resolve(process.cwd(), 'data');
@@ -136,7 +154,7 @@ const base = 'https://www.ppomppu.co.kr/search_bbs.php?search_type=sub_memo&page
   const csvLines = [csvHeader.join(',')];
   for (const r of rows) {
     const vals = [
-      '뽐뿌',
+      r.source,
       r.keyword,
       r.date,
       r.title.replace(/"/g,'""'),
@@ -151,10 +169,13 @@ const base = 'https://www.ppomppu.co.kr/search_bbs.php?search_type=sub_memo&page
   const outPath = path.join(outDir, `ppomppu-${dateStr}.csv`);
   fs.writeFileSync(outPath, csvLines.join('\n'), 'utf8');
   console.log('Saved', outPath, '-', rows.length, 'rows');
+}
 
-  await browser.close();
-  console.log('Browser closed. All done.');
-})().catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(err => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+module.exports = { scrape };

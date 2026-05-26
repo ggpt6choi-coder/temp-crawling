@@ -11,12 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      # Only provide credentials as repository secrets; other settings default in code.
-      SMTP_USER: ${{ secrets.SMTP_USER }}
-      SMTP_PASS: ${{ secrets.SMTP_PASS }}
-      # Optional: set EMAIL_TO / EMAIL_FROM as secrets if you want to override defaults
-      EMAIL_TO: ${{ secrets.EMAIL_TO }}
-      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      GOOGLE_SHEET_WEBAPP_URL: ${{ secrets.GOOGLE_SHEET_WEBAPP_URL }}
       TZ: Asia/Seoul
     steps:
       - name: Checkout

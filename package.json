@@ -10,7 +10,7 @@
     "fmkorea": "node scripts/fmkorea.js",
     "aggregate": "node scripts/aggregate.js",
     "sheets": "node scripts/send_to_sheets.js",
-    "start": "npm run ppomppu && npm run naver && npm run ruliweb && npm run fmkorea && npm run sheets && npm run email",
+    "start": "node scripts/index.js",
     "email": "node scripts/send_email.js"
   },
   "dependencies": {

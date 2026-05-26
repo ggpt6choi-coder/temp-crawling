@@ -101,7 +101,7 @@ async function scrapeKeyword(browser, keyword, targetDate) {
   return rows;
 }
 
-async function main() {
+async function scrape() {
   ensureDir(path.join(__dirname, '..', 'data'));
   const targetDate = getTargetDateString();
   const allRows = [];
@@ -120,6 +120,12 @@ async function main() {
   } finally {
     await browser.close();
   }
+  return allRows;
+}
+
+async function main() {
+  const targetDate = getTargetDateString();
+  const allRows = await scrape();
 
   const filename = `ruliweb-${targetDate.replace(/\./g, '.')}.csv`;
   const outPath = path.join(__dirname, '..', 'data', filename);
@@ -139,3 +145,5 @@ if (require.main === module) {
     process.exit(1);
   });
 }
+
+module.exports = { scrape };

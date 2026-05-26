@@ -107,7 +107,7 @@ function parseCsv(content) {
     for (const r of dataRows) {
       const title = r[3];
       const date = r[2];
-      if (!title || title === '없음' || date === '없음') {
+      if (!title) {
         continue;
       }
 
@@ -142,6 +142,9 @@ function parseCsv(content) {
 
   console.log(`Uploading ${unifiedRows.length} rows to Google Sheets...`);
 
+  const kst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  const todaySheetName = `${kst.getFullYear()}.${String(kst.getMonth() + 1).padStart(2, '0')}.${String(kst.getDate()).padStart(2, '0')}`;
+
   try {
     const response = await fetch(webappUrl, {
       method: 'POST',
@@ -149,7 +152,7 @@ function parseCsv(content) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        sheetName: '크롤링 결과',
+        sheetName: todaySheetName,
         headers: ['구분', '키워드', '날짜', '제목', '조회수', '링크'],
         rows: unifiedRows
       })
