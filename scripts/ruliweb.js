@@ -3,7 +3,6 @@ const path = require('path');
 const { chromium } = require('playwright');
 require('dotenv').config({ path: '.env.local' });
 
-const keywords = require('../keywords.json');
 const maxPages = parseInt(process.env.PAGES || '5', 10);
 
 function ensureDir(dir) {
@@ -101,13 +100,14 @@ async function scrapeKeyword(browser, keyword, targetDate) {
   return rows;
 }
 
-async function scrape() {
+async function scrape(dynamicKeywords) {
+  const kwList = (dynamicKeywords && dynamicKeywords.length > 0) ? dynamicKeywords : require('../keywords.json');
   ensureDir(path.join(__dirname, '..', 'data'));
   const targetDate = getTargetDateString();
   const allRows = [];
   const browser = await chromium.launch({ headless: true });
   try {
-    for (const kw of keywords) {
+    for (const kw of kwList) {
       console.log('scraping', kw);
       const rows = await scrapeKeyword(browser, kw, targetDate);
       if (rows.length === 0) {

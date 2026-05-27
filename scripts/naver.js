@@ -3,7 +3,6 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const keywords = require('../keywords.json');
 // Naver Cafe search URL template (cafe id matches example). Adjust CAFE_ID as needed.
 const CAFE_ID = process.env.CAFE_ID || '11262350';
 const base = `https://cafe.naver.com/f-e/cafes/${CAFE_ID}/menus/0?viewType=L&ta=SUBJECT`;
@@ -17,7 +16,8 @@ const getKstDateString = (date, offsetDays = 0, delimiter = '.') => {
   return `${yyyy}${delimiter}${mm}${delimiter}${dd}`;
 };
 
-async function scrape() {
+async function scrape(dynamicKeywords) {
+  const kwList = (dynamicKeywords && dynamicKeywords.length > 0) ? dynamicKeywords : require('../keywords.json');
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
@@ -35,7 +35,7 @@ async function scrape() {
   console.log('Filtering results for KST date:', targetDate);
   const maxPages = parseInt(process.env.PAGES || '5', 10);
   console.log('Max pages to scan:', maxPages);
-  for (const kw of keywords) {
+  for (const kw of kwList) {
     console.log(`Starting keyword: ${kw}`);
     const aggregated = [];
     let stopPaging = false;

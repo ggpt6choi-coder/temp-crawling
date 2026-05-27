@@ -3,7 +3,6 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const keywords = require('../keywords.json');
 const base = 'https://www.ppomppu.co.kr/search_bbs.php?search_type=sub_memo&page_no=';
 
 const getKstDateString = (date, offsetDays = 0) => {
@@ -15,7 +14,8 @@ const getKstDateString = (date, offsetDays = 0) => {
   return `${yyyy}.${mm}.${dd}`;
 };
 
-async function scrape() {
+async function scrape(dynamicKeywords) {
+  const kwList = (dynamicKeywords && dynamicKeywords.length > 0) ? dynamicKeywords : require('../keywords.json');
   const browser = await chromium.launch({ headless: true });
   console.log('Browser launched (ppomppu). Running headless:', true);
   const context = await browser.newContext({
@@ -30,7 +30,7 @@ async function scrape() {
   console.log('Filtering results for KST date:', targetDate);
   const maxPages = parseInt(process.env.PAGES || '5', 10);
   console.log('Max pages to scan:', maxPages);
-  for (const kw of keywords) {
+  for (const kw of kwList) {
     console.log(`Starting keyword: ${kw}`);
     const aggregated = [];
     let stopPaging = false;

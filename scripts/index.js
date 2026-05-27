@@ -15,23 +15,44 @@ const webappUrl = process.env.GOOGLE_SHEET_WEBAPP_URL;
     process.exit(1);
   }
 
+  let dynamicKeywords = null;
+  try {
+    console.log('Fetching dynamic keywords from Google Sheets...');
+    // GAS script needs doGet() implemented to handle this
+    const res = await fetch(webappUrl + '?action=getKeywords');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.keywords && Array.isArray(data.keywords) && data.keywords.length > 0) {
+        dynamicKeywords = data.keywords;
+        console.log('Loaded keywords from Sheets:', dynamicKeywords);
+      } else {
+        console.log('No keywords found in Sheets. Falling back to keywords.json.');
+      }
+    } else {
+      console.log(`Failed to fetch keywords (status ${res.status}). Falling back to keywords.json.`);
+    }
+  } catch (err) {
+    console.error('Error fetching keywords from Google Sheets:', err.message);
+    console.log('Falling back to keywords.json.');
+  }
+
   const unifiedRows = [];
 
   try {
     console.log('--- Starting Ppomppu Scraper ---');
-    const ppomppuData = await scrapePpomppu();
+    const ppomppuData = await scrapePpomppu(dynamicKeywords);
     unifiedRows.push(...ppomppuData);
 
     console.log('--- Starting Naver Scraper ---');
-    const naverData = await scrapeNaver();
+    const naverData = await scrapeNaver(dynamicKeywords);
     unifiedRows.push(...naverData);
 
     console.log('--- Starting Ruliweb Scraper ---');
-    const ruliwebData = await scrapeRuliweb();
+    const ruliwebData = await scrapeRuliweb(dynamicKeywords);
     unifiedRows.push(...ruliwebData);
 
     console.log('--- Starting Fmkorea Scraper ---');
-    const fmkoreaData = await scrapeFmkorea();
+    const fmkoreaData = await scrapeFmkorea(dynamicKeywords);
     unifiedRows.push(...fmkoreaData);
 
   } catch (err) {
