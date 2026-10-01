@@ -1,0 +1,19 @@
+name: Keepalive Workflow
+
+on:
+  schedule:
+    # Runs on the 1st and 15th of every month at 00:00 UTC (prevents repo inactivity disable)
+    - cron: '0 0 1,15 * *'
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Keepalive Workflow
+        uses: gautamkrishnar/keepalive-workflow@v2
